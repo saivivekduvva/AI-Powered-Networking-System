@@ -1,10 +1,11 @@
 import { useState } from "react"
 
-const API_URL = "http://127.0.0.1:8000/recommend"
+const API_URL = "http://127.0.0.1:8000/recommendations"
 
 export default function App() {
   const [intent, setIntent] = useState("")
   const [results, setResults] = useState([])
+  const [sources, setSources] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -14,13 +15,20 @@ export default function App() {
     setLoading(true)
     setError("")
     setResults([])
+    setSources([])
 
     try {
-      const res = await fetch(
-        `${API_URL}?intent=${encodeURIComponent(intent)}`
-      )
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ intent: intent.trim() }),
+      })
+
       const data = await res.json()
       setResults(data.recommendations || [])
+      setSources(data.data_sources || [])
     } catch (err) {
       setError("Failed to fetch recommendations")
     } finally {
@@ -43,15 +51,20 @@ export default function App() {
         />
 
         <button
-          className="w-full bg-black text-white p-3 rounded"
+          className="w-full bg-black text-white p-3 rounded disabled:opacity-50"
           onClick={fetchConnections}
+          disabled={loading}
         >
-          Find Connections
+          {loading ? "Finding matches..." : "Find Connections"}
         </button>
 
-        {loading && (
-          <p className="text-center mt-4">
-            Finding best matches...
+        {/* Data sources badge (IMPORTANT) */}
+        {sources.length > 0 && (
+          <p className="text-xs text-gray-500 mt-3 text-center">
+            Using public data from:{" "}
+            <span className="font-medium">
+              {sources.join(", ")}
+            </span>
           </p>
         )}
 
@@ -61,13 +74,21 @@ export default function App() {
           </p>
         )}
 
+        {/* Empty state */}
+        {!loading && results.length === 0 && intent && !error && (
+          <p className="text-center text-sm text-gray-500 mt-6">
+            No recommendations found. Try refining your intent.
+          </p>
+        )}
+
         <div className="mt-6 space-y-4">
           {results.map((p, i) => (
             <div key={i} className="border p-4 rounded">
               <h2 className="font-semibold">{p.name}</h2>
               <p className="text-sm text-gray-600">{p.role}</p>
 
-              <p className="mt-2 text-sm">
+              {/* Score + WHY NOW badge */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <span
                   className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                     p.opportunity_score > 70
@@ -79,9 +100,15 @@ export default function App() {
                 >
                   Score: {p.opportunity_score}
                 </span>
-              </p>
 
-              <p className="mt-2 text-sm">{p.why}</p>
+                {p.why_now && (
+                  <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                    {p.why_now}
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-2 text-sm text-gray-700">{p.why}</p>
 
               <a
                 href={p.profile_url}
