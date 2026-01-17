@@ -27,7 +27,7 @@ def recommend(user_intent, profiles):
         )
 
         # ==========================================================
-        #                 WHY NOW BADGE (FINAL FIX)
+        #                 WHY NOW BADGE
         # ==========================================================
         if timing_score >= 85 and opportunity_score >= 55:
             why_now = "🚀 Actively relevant right now"
@@ -39,10 +39,8 @@ def recommend(user_intent, profiles):
             why_now = "📌 Relevant background — explore when ready"
 
         # ==========================================================
-        #              EXPLAINABILITY AI (FINAL)
+        #              NORMALIZE SKILLS
         # ==========================================================
-
-        # ---- Normalize skills safely ----
         raw_skills = p.get("skills", "")
         if isinstance(raw_skills, str):
             skills = [s.strip() for s in raw_skills.split(",") if s.strip()]
@@ -54,19 +52,47 @@ def recommend(user_intent, profiles):
             if s.lower() in user_intent_lower
         ]
 
+        role = p.get("role", "professional")
+        source = p.get("profile_source")
+
+        # ==========================================================
+        #              CONTEXTUAL TRIGGERS (NEW)
+        # ==========================================================
+        contextual_triggers = []
+
+        # 1️⃣ Overlapping interests
+        if matched_skills:
+            contextual_triggers.append(
+                f"Overlapping interests in {matched_skills[0]}"
+            )
+
+        # 2️⃣ Recent work
+        if timing_score >= 70:
+            contextual_triggers.append("Recent professional activity")
+
+        # 3️⃣ Aligned goals
+        if role.lower() in user_intent_lower:
+            contextual_triggers.append("Aligned professional goals")
+
+        # 4️⃣ Shared professional context
+        if source:
+            contextual_triggers.append(f"Active on {source}")
+
+        # Keep only top 2 triggers
+        contextual_triggers = contextual_triggers[:2]
+
+        # ==========================================================
+        #              EXPLAINABILITY TEXT
+        # ==========================================================
         reasons = []
 
-        # 1️⃣ Skill-based reasoning
         if matched_skills:
             reasons.append(
                 f"shared expertise in {', '.join(matched_skills)}"
             )
 
-        # 2️⃣ Role-based reasoning
-        role = p.get("role", "professional")
         reasons.append(f"their role as a {role}")
 
-        # 3️⃣ Timing-based reasoning
         if timing_score >= 85:
             reasons.append("very high recent professional activity")
         elif timing_score >= 70:
@@ -76,12 +102,9 @@ def recommend(user_intent, profiles):
         else:
             reasons.append("relevant background with lower recent activity")
 
-        # 4️⃣ Source-based reasoning (optional)
-        source = p.get("profile_source")
         if source:
             reasons.append(f"public data from {source}")
 
-        # 5️⃣ Relative ranking context
         if opportunity_score >= 75:
             reasons.append("a strong overall match at this time")
         elif opportunity_score >= 55:
@@ -89,14 +112,13 @@ def recommend(user_intent, profiles):
         else:
             reasons.append("a potential match worth exploring")
 
-        # ---- Final explanation ----
         why_reason = (
             "This profile is recommended because of "
             + ", ".join(reasons)
             + "."
         )
 
-        # -------- Personalized conversation starter --------
+        # -------- Conversation starter --------
         starter = (
             f"Hi {p.get('name')}, I came across your work as a {role} "
             f"and thought it would be great to connect."
@@ -108,10 +130,10 @@ def recommend(user_intent, profiles):
             "role": role,
             "opportunity_score": opportunity_score,
             "why": why_reason,
-            "why_now": why_now,   # ✅ Now visibly different
+            "why_now": why_now,
+            "contextual_triggers": contextual_triggers,  # 👈 NEW
             "starter": starter,
             "profile_url": p.get("profile_url", "")
         })
 
-    # -------- Return ranked recommendations --------
     return sorted(results, key=lambda x: x["opportunity_score"], reverse=True)
