@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Amit Sharma",
+    "role": "Machine Learning Engineer",
+    "industry": "AI Healthcare",
+    "skills": "Python, NLP, ML",
+    "recent_activity_score": 80
+  },
+  {
+    "name": "Neha Verma",
+    "role": "Product Manager",
+    "industry": "SaaS",
+    "skills": "Product Strategy, UX",
+    "recent_activity_score": 72
+  }
+]
