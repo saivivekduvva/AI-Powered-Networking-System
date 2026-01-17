@@ -4,14 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth background pattern */
 body {
-  background-color: #f8fafc;
-  background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-  background-size: 24px 24px;
+  /* Subtle mesh gradient for depth without "dirty" texture */
+  background: radial-gradient(circle at 50% 0%, #f8fafc 0%, #f1f5f9 100%);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar for Chrome/Safari */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -24,18 +22,6 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
-}
-
-/* Shimmer Animation for Loading State */
-@keyframes shimmer {
-  0% { background-position: -1000px 0; }
-  100% { background-position: 1000px 0; }
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite linear;
-  background: linear-gradient(to right, #f1f5f9 4%, #e2e8f0 25%, #f1f5f9 36%);
-  background-size: 1000px 100%;
 }
 
 #root {
