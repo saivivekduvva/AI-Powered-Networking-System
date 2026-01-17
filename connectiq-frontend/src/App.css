@@ -1,4 +1,29 @@
 /* Remove overly restrictive centering */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  /* Subtle mesh gradient for depth without "dirty" texture */
+  background: radial-gradient(circle at 50% 0%, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Custom Scrollbar for Chrome/Safari */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 #root {
   max-width: 100%;
   margin: 0;
