@@ -3,14 +3,10 @@ uvicorn
 requests
 pydantic
 sqlalchemy
-numpy
-pandas
-scikit-learn
-nltk
-spacy
 python-dotenv
 httpx
 python-multipart
 aiofiles
 jose
+passlib[argon2]
 #created a new branch
