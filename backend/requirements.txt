@@ -4,6 +4,3 @@ requests
 sentence-transformers
 torch
 beautifulsoup4
-python-jose
-passlib[bcrypt]
-#Heyy
