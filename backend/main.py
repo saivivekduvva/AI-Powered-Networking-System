@@ -3,15 +3,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys
 import os
+from fastapi import Depends
+from auth.auth_utils import get_current_user
+
 
 # ---------------- Path Setup ----------------
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
 from ai.ai_engine import recommend
-from backend.data.profile_loader import load_profiles
+from data.profile_loader import load_profiles
 
 app = FastAPI(title="ConnectIQ API", version="1.0")
+from backend.auth.auth_routes import router as auth_router
+app.include_router(auth_router)
+
 
 # ---------------- CORS ----------------
 app.add_middleware(
@@ -19,40 +25,51 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://connectiq-nhg1.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------------- Health Check ----------------
-@app.get("/")
+# ---------------- Health ----------------
+@app.get("/health")
 def health():
-    return {"status": "ConnectIQ backend running"}
+    return {"status": "Backend is running"}
+
+@app.get("/protected-test")
+def protected_test(current_user = Depends(get_current_user)):
+    return {
+        "message": "JWT authentication works",
+        "user_email": current_user.email
+    }
 
 # ---------------- Request Model ----------------
 class IntentRequest(BaseModel):
     intent: str
 
-# ---------------- API ----------------
-@app.post("/recommendations")
-def recommend_api(req: IntentRequest):
-    try:
-        intent = req.intent.strip()
-        if not intent:
-            raise HTTPException(status_code=400, detail="Intent required")
+# ---------------- Response Model ----------------
+class RecommendationResponse(BaseModel):
+    data_sources: list[str]
+    recommendations: list[dict]
 
-        # ✅ Correct call
-        profiles, source = load_profiles(intent)
+# ---------------- POST API (KEEP FOR FUTURE) ----------------
+@app.post("/recommendations", response_model=RecommendationResponse)
+def get_recommendations(req: IntentRequest):
+    profiles, source = load_profiles(req.intent)
+    results = recommend(req.intent, profiles)
 
-        results = recommend(intent, profiles)
+    return {
+        "data_sources": [source] if isinstance(source, str) else source,
+        "recommendations": results
+    }
 
-        return {
-            "recommendations": results,
-            "data_sources": [source] if isinstance(source, str) else source
-        }
+# ---------------- GET API (FOR FRONTEND) ----------------
+@app.get("/recommend")
+def recommend_get(intent: str):
+    profiles, source = load_profiles(intent)
+    results = recommend(intent, profiles)
 
-    except Exception as e:
-        print("ERROR in /recommendations:", str(e))
-        raise HTTPException(status_code=500, detail="AI processing failed")
+    return {
+        "source": source,
+        "recommendations": results
+    }
