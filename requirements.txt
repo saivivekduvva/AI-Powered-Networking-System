@@ -12,4 +12,5 @@ python-dotenv
 httpx
 python-multipart
 aiofiles
+jose
 #created a new branch
