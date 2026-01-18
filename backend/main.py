@@ -35,27 +35,18 @@ def health():
 class IntentRequest(BaseModel):
     intent: str
 
-# ---------------- Response Model ----------------
-class RecommendationResponse(BaseModel):
-    data_sources: list[str]
-    recommendations: list[dict]
-
-# ---------------- MAIN API (USED BY FRONTEND) ----------------
-@app.post("/recommendations", response_model=RecommendationResponse)
-def recommend_api(req: IntentRequest):
+# ---------------- API ----------------
+@app.post("/recommendations")
+def get_recommendations(req: IntentRequest):
     try:
-        intent = req.intent.strip()
-        if not intent:
-            raise HTTPException(status_code=400, detail="Intent required")
-
-        profiles, sources = load_profiles(intent)
-        results = recommend(intent, profiles)
+        profiles, source = load_profiles(req.intent)
+        results = recommend(req.intent, profiles)
 
         return {
             "recommendations": results,
-            "data_sources": sources if isinstance(sources, list) else [sources]
+            "data_sources": [source] if isinstance(source, str) else source
         }
 
     except Exception as e:
-        print("ERROR in /recommendations:", str(e))
+        print("RECOMMENDATION ERROR:", str(e))
         raise HTTPException(status_code=500, detail="AI processing failed")
