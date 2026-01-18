@@ -1,22 +1,137 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Search, 
-  ArrowRight, 
-  Sparkles, 
-  Download, 
-  Filter, 
-  History, 
-  Share2,
-  Sun,
-  Moon,
-  Bookmark,
-  Heart
+  Search, ArrowRight, Sparkles, Download, Filter, 
+  History, Share2, Sun, Moon, Bookmark, Heart,
+  Lock, Mail, User, LogOut
 } from "lucide-react";
 
 const API_URL = "http://127.0.0.1:8000/recommendations";
 
-export default function App() {
+// --- AUTHENTICATION SCREEN COMPONENT ---
+const AuthScreen = ({ onLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  const handleAuth = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    // Simulate API call delay
+    setTimeout(() => {
+      setLoading(false);
+      onLogin(); // Trigger success
+    }, 1000);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-800">
+        
+        {/* Left Side - Visuals */}
+        <div className="w-full md:w-1/2 bg-gradient-to-br from-indigo-600 to-violet-700 p-12 flex flex-col justify-between text-white relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full opacity-20">
+            <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+            <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-400 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="relative z-10">
+            <div className="bg-white/20 w-fit p-2 rounded-xl backdrop-blur-sm mb-6">
+              <Sparkles className="text-white" />
+            </div>
+            <h1 className="text-4xl font-bold mb-4">ConnectIQ</h1>
+            <p className="text-indigo-100 text-lg">
+              Unlock the power of AI-driven networking intelligence. Find the signal in the noise.
+            </p>
+          </div>
+
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-center gap-3 text-sm text-indigo-100 bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <span>Live Opportunity Scoring</span>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-indigo-100 bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+              <span>Contextual Triggers</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Form */}
+        <div className="w-full md:w-1/2 p-12 flex flex-col justify-center">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              {isLogin ? "Welcome Back" : "Create Account"}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400">
+              {isLogin ? "Enter your credentials to access the intelligence hub." : "Get started with your 14-day free trial."}
+            </p>
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="relative">
+                <User className="absolute left-3 top-3 text-slate-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Full Name" 
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
+                  required
+                />
+              </div>
+            )}
+            
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-slate-400" size={20} />
+              <input 
+                type="email" 
+                placeholder="Work Email" 
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-slate-400" size={20} />
+              <input 
+                type="password" 
+                placeholder="Password" 
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
+                required
+              />
+            </div>
+
+            <button 
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/30 flex justify-center items-center gap-2"
+            >
+              {loading ? (
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+              ) : (
+                <>
+                  {isLogin ? "Sign In" : "Get Started"} <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button 
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+            >
+              {isLogin ? "Sign up" : "Log in"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN DASHBOARD COMPONENT ---
+// (This contains your original functional logic)
+const Dashboard = ({ onLogout }) => {
   // --- STATE MANAGEMENT ---
   const [intent, setIntent] = useState("");
   const [results, setResults] = useState([]);
@@ -26,7 +141,7 @@ export default function App() {
   const [searched, setSearched] = useState(false);
   
   // Advanced Features
-  const [filterMode, setFilterMode] = useState("all"); // 'all', 'saved', 'high-score'
+  const [filterMode, setFilterMode] = useState("all"); 
   const [searchHistory, setSearchHistory] = useState([]);
   
   // Theme & Persistence
@@ -34,16 +149,16 @@ export default function App() {
   const [savedProfiles, setSavedProfiles] = useState([]);
 
   // --- EFFECTS ---
-
-  // Load saved data from LocalStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("connectiq_saved");
     const history = localStorage.getItem("connectiq_history");
+    const theme = localStorage.getItem("connectiq_theme");
+    
     if (saved) setSavedProfiles(JSON.parse(saved));
     if (history) setSearchHistory(JSON.parse(history));
+    if (theme === 'dark') setIsDarkMode(true);
   }, []);
 
-  // Save to LocalStorage whenever state changes
   useEffect(() => {
     localStorage.setItem("connectiq_saved", JSON.stringify(savedProfiles));
   }, [savedProfiles]);
@@ -52,8 +167,11 @@ export default function App() {
     localStorage.setItem("connectiq_history", JSON.stringify(searchHistory));
   }, [searchHistory]);
 
-  // --- ACTIONS ---
+  useEffect(() => {
+    localStorage.setItem("connectiq_theme", isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
+  // --- ACTIONS ---
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const toggleSaveProfile = (profile) => {
@@ -74,9 +192,8 @@ export default function App() {
     setError("");
     setResults([]);
     setSearched(true);
-    setFilterMode("all"); // Reset filter on new search
+    setFilterMode("all"); 
 
-    // Update History
     if (!searchHistory.includes(term)) {
       setSearchHistory(prev => [term, ...prev].slice(0, 4));
     }
@@ -103,15 +220,8 @@ export default function App() {
 
   // --- FILTER LOGIC ---
   const filteredResults = useMemo(() => {
-    if (filterMode === "saved") {
-      return savedProfiles;
-    }
-    // If we are searching, filter the search results
+    if (filterMode === "saved") return savedProfiles;
     let data = results;
-    
-    // If we are in "Saved" mode but have no search results, we show saved profiles.
-    // However, if the user clicked "Saved" tab, they expect to see saved items regardless of search.
-    
     if (filterMode === "high-score") {
       return data.filter(r => r.opportunity_score > 30);
     }
@@ -132,7 +242,6 @@ export default function App() {
   };
 
   return (
-    // DARK MODE WRAPPER
     <div className={isDarkMode ? "dark" : ""}>
       <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100 dark:selection:bg-indigo-900 dark:selection:text-indigo-100">
         
@@ -151,31 +260,20 @@ export default function App() {
             
             {/* Right Side Controls */}
             <div className="flex items-center gap-4">
-              
-              {/* Dark Mode Toggle */}
               <button 
                 onClick={toggleTheme}
-                className="p-2 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all focus:outline-none"
-                aria-label="Toggle Dark Mode"
+                className="p-2 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={isDarkMode ? "moon" : "sun"}
-                    initial={{ y: -20, opacity: 0, rotate: -90 }}
-                    animate={{ y: 0, opacity: 1, rotate: 0 }}
-                    exit={{ y: 20, opacity: 0, rotate: 90 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
-                  </motion.div>
-                </AnimatePresence>
+                {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
               </button>
 
-              <div className="hidden md:flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-transparent dark:border-slate-700">
-                <span className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> System Active
-                </span>
-              </div>
+              <button 
+                onClick={onLogout}
+                className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
+              >
+                <LogOut size={18} />
+                <span className="hidden md:inline">Sign Out</span>
+              </button>
             </div>
           </div>
         </header>
@@ -302,7 +400,7 @@ export default function App() {
             <AnimatePresence mode="popLayout">
               {filteredResults.map((p, i) => (
                 <TechCard 
-                  key={p.name} // Use name as key for stability
+                  key={p.name} 
                   profile={p} 
                   index={i} 
                   isSaved={savedProfiles.some(sp => sp.name === p.name)}
@@ -334,11 +432,59 @@ export default function App() {
       </div>
     </div>
   );
+};
+
+// --- APP ORCHESTRATOR ---
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Check local storage for persistent login session
+    const loggedIn = localStorage.getItem("connectiq_auth");
+    if (loggedIn) setIsAuthenticated(true);
+    setCheckingAuth(false);
+  }, []);
+
+  const handleLogin = () => {
+    localStorage.setItem("connectiq_auth", "true");
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("connectiq_auth");
+    setIsAuthenticated(false);
+  };
+
+  if (checkingAuth) return null; // Avoid flicker
+
+  return (
+    <AnimatePresence mode="wait">
+      {isAuthenticated ? (
+        <motion.div 
+          key="dashboard"
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }}
+        >
+          <Dashboard onLogout={handleLogout} />
+        </motion.div>
+      ) : (
+        <motion.div 
+          key="auth"
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }}
+        >
+          <AuthScreen onLogin={handleLogin} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
-// --- CARD COMPONENT ---
+// --- CARD COMPONENT (UNCHANGED BUT INCLUDED) ---
 function TechCard({ profile, index, isSaved, onToggleSave }) {
-  // Score color logic
   const scoreColor = profile.opportunity_score > 30 
     ? "text-emerald-600 bg-emerald-50 ring-emerald-500/20 dark:bg-emerald-900/30 dark:text-emerald-400 dark:ring-emerald-500/40" 
     : "text-amber-600 bg-amber-50 ring-amber-500/20 dark:bg-amber-900/30 dark:text-amber-400 dark:ring-amber-500/40";
@@ -352,10 +498,8 @@ function TechCard({ profile, index, isSaved, onToggleSave }) {
       transition={{ duration: 0.3, delay: index * 0.05 }}
       className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 hover:shadow-xl hover:shadow-indigo-900/5 hover:border-indigo-100 dark:hover:border-indigo-900 transition-all duration-300 flex flex-col h-full relative overflow-hidden"
     >
-      {/* Gradient Blob Effect */}
       <div className="absolute -right-10 -top-10 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none"></div>
 
-      {/* Header */}
       <div className="flex justify-between items-start mb-4 relative z-10">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
@@ -369,7 +513,6 @@ function TechCard({ profile, index, isSaved, onToggleSave }) {
         </div>
       </div>
 
-      {/* Why Now Badge */}
       {profile.why_now && (
         <div className="mb-4 relative z-10">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
@@ -378,12 +521,10 @@ function TechCard({ profile, index, isSaved, onToggleSave }) {
         </div>
       )}
 
-      {/* Body */}
       <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-6 flex-grow relative z-10">
         {profile.why}
       </p>
 
-      {/* Chips */}
       <div className="flex flex-wrap gap-2 mb-6 relative z-10">
         {profile.contextual_triggers?.slice(0, 3).map((t, idx) => (
           <span key={idx} className="px-2 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium rounded border border-slate-100 dark:border-slate-700">
@@ -392,10 +533,8 @@ function TechCard({ profile, index, isSaved, onToggleSave }) {
         ))}
       </div>
 
-      {/* Footer */}
       <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between mt-auto relative z-10">
         <div className="flex gap-2">
-           {/* SAVE BUTTON */}
            <motion.button 
              whileTap={{ scale: 0.8 }}
              onClick={onToggleSave}
