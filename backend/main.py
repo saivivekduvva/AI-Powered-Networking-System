@@ -37,10 +37,16 @@ class IntentRequest(BaseModel):
 
 # ---------------- API ----------------
 @app.post("/recommendations")
-def get_recommendations(req: IntentRequest):
+def recommend_api(req: IntentRequest):
     try:
-        profiles, source = load_profiles(req.intent)
-        results = recommend(req.intent, profiles)
+        intent = req.intent.strip()
+        if not intent:
+            raise HTTPException(status_code=400, detail="Intent required")
+
+        # ✅ Correct call
+        profiles, source = load_profiles(intent)
+
+        results = recommend(intent, profiles)
 
         return {
             "recommendations": results,
@@ -48,5 +54,5 @@ def get_recommendations(req: IntentRequest):
         }
 
     except Exception as e:
-        print("RECOMMENDATION ERROR:", str(e))
+        print("ERROR in /recommendations:", str(e))
         raise HTTPException(status_code=500, detail="AI processing failed")
