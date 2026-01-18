@@ -1,9 +1,16 @@
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer("all-MiniLM-L6-v2")
+    return _model
 
 
 def recommend(user_intent, profiles):
+    model = get_model()
     intent_embedding = model.encode(user_intent, convert_to_tensor=True)
     results = []
 
