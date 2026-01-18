@@ -1,5 +1,4 @@
-from fastapi import FastAPI
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys
@@ -41,31 +40,20 @@ class RecommendationResponse(BaseModel):
     data_sources: list[str]
     recommendations: list[dict]
 
-# ---------------- POST API (KEEP FOR FUTURE) ----------------
+# ---------------- MAIN API (USED BY FRONTEND) ----------------
 @app.post("/recommendations", response_model=RecommendationResponse)
-def get_recommendations(req: IntentRequest):
-    profiles, source = load_profiles(req.intent)
-    results = recommend(req.intent, profiles)
-
-    return {
-        "data_sources": [source] if isinstance(source, str) else source,
-        "recommendations": results
-    }
-
-# ---------------- GET API (FOR FRONTEND) ----------------
-@app.post("/recommendations")
-def recommend_api(payload: dict):
+def recommend_api(req: IntentRequest):
     try:
-        intent = payload.get("intent")
+        intent = req.intent.strip()
         if not intent:
             raise HTTPException(status_code=400, detail="Intent required")
 
-        profiles = load_profiles()
+        profiles, sources = load_profiles(intent)
         results = recommend(intent, profiles)
 
         return {
             "recommendations": results,
-            "data_sources": ["github", "devpost", "scholar"]
+            "data_sources": sources if isinstance(sources, list) else [sources]
         }
 
     except Exception as e:
