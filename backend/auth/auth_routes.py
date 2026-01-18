@@ -45,9 +45,8 @@ def login(
             detail="Invalid credentials"
         )
 
-    access_token = create_access_token(
-        data={"sub": str(user.id)}
-    )
+    access_token = create_access_token(user_id=user.id)
+
 
     return {
         "access_token": access_token,

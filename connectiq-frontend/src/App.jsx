@@ -3,24 +3,56 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, ArrowRight, Sparkles, Download, Filter, 
   History, Share2, Sun, Moon, Bookmark, Heart,
-  Lock, Mail, User, LogOut
+  Lock, Mail, LogOut
 } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8000/recommendations";
+// --- IMPORT YOUR LOGIC FILES ---
+import { login, signup } from "./auth";
+import { getToken, saveToken, logout } from "./token";
+import { apiRequest } from "./api";
 
 // --- AUTHENTICATION SCREEN COMPONENT ---
 const AuthScreen = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  
+  // Form State
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const handleAuth = (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call delay
-    setTimeout(() => {
+    setError("");
+    setSuccessMsg("");
+
+    try {
+      if (isLogin) {
+        // --- LOGIN LOGIC ---
+        const res = await login(email, password);
+        // Your auth.js returns the whole JSON. We assume access_token is inside.
+        if (res.access_token) {
+          saveToken(res.access_token);
+          onLogin(); // Update parent state to show Dashboard
+        } else {
+            throw new Error("No token received");
+        }
+      } else {
+        // --- SIGNUP LOGIC ---
+        // Your signup function only takes email & password
+        await signup(email, password);
+        setSuccessMsg("Account created successfully! Please login.");
+        setIsLogin(true); // Switch to login view
+        setPassword(""); // Clear password for security
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Authentication failed. Please check your credentials.");
+    } finally {
       setLoading(false);
-      onLogin(); // Trigger success
-    }, 1000);
+    }
   };
 
   return (
@@ -63,28 +95,31 @@ const AuthScreen = ({ onLogin }) => {
               {isLogin ? "Welcome Back" : "Create Account"}
             </h2>
             <p className="text-slate-500 dark:text-slate-400">
-              {isLogin ? "Enter your credentials to access the intelligence hub." : "Get started with your 14-day free trial."}
+              {isLogin ? "Enter your credentials to access the intelligence hub." : "Get started with your free account."}
             </p>
           </div>
 
+          {/* Feedback Messages */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50">
+              {error}
+            </div>
+          )}
+          {successMsg && (
+            <div className="mb-4 p-3 bg-emerald-50 text-emerald-600 text-sm rounded-lg border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/50">
+              {successMsg}
+            </div>
+          )}
+
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
-              <div className="relative">
-                <User className="absolute left-3 top-3 text-slate-400" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Full Name" 
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
-                  required
-                />
-              </div>
-            )}
             
             <div className="relative">
               <Mail className="absolute left-3 top-3 text-slate-400" size={20} />
               <input 
-                type="email" 
-                placeholder="Work Email" 
+                type="text" 
+                placeholder="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)} 
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
                 required
               />
@@ -95,6 +130,8 @@ const AuthScreen = ({ onLogin }) => {
               <input 
                 type="password" 
                 placeholder="Password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
                 required
               />
@@ -108,7 +145,7 @@ const AuthScreen = ({ onLogin }) => {
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
               ) : (
                 <>
-                  {isLogin ? "Sign In" : "Get Started"} <ArrowRight size={18} />
+                  {isLogin ? "Sign In" : "Sign Up"} <ArrowRight size={18} />
                 </>
               )}
             </button>
@@ -117,7 +154,11 @@ const AuthScreen = ({ onLogin }) => {
           <div className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button 
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                setSuccessMsg("");
+              }}
               className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
             >
               {isLogin ? "Sign up" : "Log in"}
@@ -130,12 +171,10 @@ const AuthScreen = ({ onLogin }) => {
 };
 
 // --- MAIN DASHBOARD COMPONENT ---
-// (This contains your original functional logic)
 const Dashboard = ({ onLogout }) => {
   // --- STATE MANAGEMENT ---
   const [intent, setIntent] = useState("");
   const [results, setResults] = useState([]);
-  const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
@@ -199,16 +238,24 @@ const Dashboard = ({ onLogout }) => {
     }
 
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intent: term }),
-      });
-      const data = await res.json();
+      // --- UPDATED: USE apiRequest HERE ---
+      // We use your apiRequest helper which automatically handles errors
+      // and can inject the token if you modify apiRequest to accept it or read from storage.
+      // Based on your api.js, we need to pass the token manually.
+      
+      const token = getToken();
+      
+      const data = await apiRequest(
+          "/recommendations", 
+          "POST", 
+          { intent: term }, 
+          token
+      );
+
       setResults(data.recommendations || []);
-      setSources(data.data_sources || []);
     } catch (err) {
-      setError("Unable to retrieve intelligence.");
+      console.error(err);
+      setError(err.message || "Unable to retrieve intelligence.");
     } finally {
       setLoading(false);
     }
@@ -440,19 +487,21 @@ export default function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    // Check local storage for persistent login session
-    const loggedIn = localStorage.getItem("connectiq_auth");
-    if (loggedIn) setIsAuthenticated(true);
+    // --- UPDATED: USE REAL TOKEN CHECK HERE ---
+    const token = getToken();
+    if (token) {
+        setIsAuthenticated(true);
+    }
     setCheckingAuth(false);
   }, []);
 
   const handleLogin = () => {
-    localStorage.setItem("connectiq_auth", "true");
     setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("connectiq_auth");
+    // --- UPDATED: REMOVE TOKEN ON LOGOUT ---
+    logout();
     setIsAuthenticated(false);
   };
 
@@ -483,7 +532,7 @@ export default function App() {
   );
 }
 
-// --- CARD COMPONENT (UNCHANGED BUT INCLUDED) ---
+// --- CARD COMPONENT (UNCHANGED) ---
 function TechCard({ profile, index, isSaved, onToggleSave }) {
   const scoreColor = profile.opportunity_score > 30 
     ? "text-emerald-600 bg-emerald-50 ring-emerald-500/20 dark:bg-emerald-900/30 dark:text-emerald-400 dark:ring-emerald-500/40" 
