@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import sys
 import os
 from fastapi import Depends
-from backend.auth.auth_utils import get_current_user
+from auth.auth_utils import get_current_user
 
 
 # ---------------- Path Setup ----------------
@@ -12,7 +12,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
 from ai.ai_engine import recommend
-from backend.data.profile_loader import load_profiles
+from data.profile_loader import load_profiles
 
 app = FastAPI(title="ConnectIQ API", version="1.0")
 from backend.auth.auth_routes import router as auth_router
