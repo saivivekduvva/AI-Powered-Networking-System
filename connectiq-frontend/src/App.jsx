@@ -14,7 +14,7 @@ import {
   Heart
 } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8000/recommendations";
+const API_URL = "https://connectiq-nhg1.onrender.com/recommendations";
 
 export default function App() {
   // --- STATE MANAGEMENT ---

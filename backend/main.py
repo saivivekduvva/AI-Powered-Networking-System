@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys
@@ -52,19 +53,21 @@ def get_recommendations(req: IntentRequest):
     }
 
 # ---------------- GET API (FOR FRONTEND) ----------------
-@app.get("/recommend")
-def recommend_get(intent: str):
+@app.post("/recommendations")
+def recommend_api(payload: dict):
     try:
-        profiles, source = load_profiles(intent)
+        intent = payload.get("intent")
+        if not intent:
+            raise HTTPException(status_code=400, detail="Intent required")
+
+        profiles = load_profiles()
         results = recommend(intent, profiles)
 
         return {
-            "source": source,
-            "recommendations": results
+            "recommendations": results,
+            "data_sources": ["github", "devpost", "scholar"]
         }
 
     except Exception as e:
-        return {
-            "error": str(e),
-            "recommendations": []
-        }
+        print("ERROR in /recommendations:", str(e))
+        raise HTTPException(status_code=500, detail="AI processing failed")

@@ -1,12 +1,12 @@
-from sentence_transformers import SentenceTransformer, util
-
-_model = None
+from sentence_transformers import util
+model = None
 
 def get_model():
-    global _model
-    if _model is None:
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-    return _model
+    global model
+    if model is None:
+        from sentence_transformers import SentenceTransformer
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+    return model
 
 
 def recommend(user_intent, profiles):
