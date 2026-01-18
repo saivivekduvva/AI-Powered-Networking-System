@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, 
-  ArrowRight, 
-  Sparkles, 
-  Download, 
-  Filter, 
-  History, 
+import {
+  Search,
+  ArrowRight,
+  Sparkles,
+  Download,
+  Filter,
+  History,
   Share2,
   Sun,
   Moon,
@@ -14,28 +14,23 @@ import {
   Heart
 } from "lucide-react";
 
-const API_URL = "http://127.0.0.1:8000/recommendations";
+const API_URL = "http://127.0.0.1:8000/recommend";
 
 export default function App() {
-  // --- STATE MANAGEMENT ---
+  // ---------------- STATE ----------------
   const [intent, setIntent] = useState("");
   const [results, setResults] = useState([]);
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
-  
-  // Advanced Features
-  const [filterMode, setFilterMode] = useState("all"); // 'all', 'saved', 'high-score'
+
+  const [filterMode, setFilterMode] = useState("all");
   const [searchHistory, setSearchHistory] = useState([]);
-  
-  // Theme & Persistence
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [savedProfiles, setSavedProfiles] = useState([]);
 
-  // --- EFFECTS ---
-
-  // Load saved data from LocalStorage on mount
+  // ---------------- EFFECTS ----------------
   useEffect(() => {
     const saved = localStorage.getItem("connectiq_saved");
     const history = localStorage.getItem("connectiq_history");
@@ -43,7 +38,6 @@ export default function App() {
     if (history) setSearchHistory(JSON.parse(history));
   }, []);
 
-  // Save to LocalStorage whenever state changes
   useEffect(() => {
     localStorage.setItem("connectiq_saved", JSON.stringify(savedProfiles));
   }, [savedProfiles]);
@@ -52,17 +46,23 @@ export default function App() {
     localStorage.setItem("connectiq_history", JSON.stringify(searchHistory));
   }, [searchHistory]);
 
-  // --- ACTIONS ---
+  // ---------------- ACTIONS ----------------
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      localStorage.setItem("connectiq_theme", next ? "dark" : "light");
+      document.documentElement.classList.toggle("dark", next);
+      return next;
+    });
+  };
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const toggleSaveProfile = (profile) => {
-    const isAlreadySaved = savedProfiles.some(p => p.name === profile.name);
-    if (isAlreadySaved) {
-      setSavedProfiles(prev => prev.filter(p => p.name !== profile.name));
-    } else {
-      setSavedProfiles(prev => [...prev, profile]);
-    }
+    setSavedProfiles((prev) =>
+      prev.some((p) => p.name === profile.name)
+        ? prev.filter((p) => p.name !== profile.name)
+        : [...prev, profile]
+    );
   };
 
   const fetchConnections = async (searchTerm = intent) => {
@@ -74,23 +74,22 @@ export default function App() {
     setError("");
     setResults([]);
     setSearched(true);
-    setFilterMode("all"); // Reset filter on new search
+    setFilterMode("all");
 
-    // Update History
     if (!searchHistory.includes(term)) {
-      setSearchHistory(prev => [term, ...prev].slice(0, 4));
+      setSearchHistory((prev) => [term, ...prev].slice(0, 5));
     }
 
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intent: term }),
-      });
+      const res = await fetch(
+        `${API_URL}?intent=${encodeURIComponent(term)}`
+      );
+      if (!res.ok) throw new Error("Backend error");
+
       const data = await res.json();
       setResults(data.recommendations || []);
-      setSources(data.data_sources || []);
-    } catch (err) {
+      setSources(data.source || []);
+    } catch {
       setError("Unable to retrieve intelligence.");
     } finally {
       setLoading(false);
@@ -98,37 +97,40 @@ export default function App() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') fetchConnections();
+    if (e.key === "Enter") fetchConnections();
   };
 
-  // --- FILTER LOGIC ---
+  // ---------------- FILTER LOGIC ----------------
   const filteredResults = useMemo(() => {
-    if (filterMode === "saved") {
-      return savedProfiles;
-    }
-    // If we are searching, filter the search results
+    if (filterMode === "saved") return savedProfiles;
+
     let data = results;
-    
-    // If we are in "Saved" mode but have no search results, we show saved profiles.
-    // However, if the user clicked "Saved" tab, they expect to see saved items regardless of search.
-    
     if (filterMode === "high-score") {
-      return data.filter(r => r.opportunity_score > 30);
+      return data.filter((r) => r.opportunity_score >= 30);
     }
     return data;
   }, [results, savedProfiles, filterMode]);
 
+  // ---------------- EXPORT ----------------
   const handleExport = () => {
-    if (filteredResults.length === 0) return;
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + ["Name,Role,Score,Why"].join(",") + "\n" 
-      + filteredResults.map(r => `"${r.name}","${r.role}",${r.opportunity_score},"${r.why}"`).join("\n");
-    const link = document.createElement("a");
-    link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "connectiq_export.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!filteredResults.length) return;
+
+    const csv =
+      "Name,Role,Score,Why\n" +
+      filteredResults
+        .map(
+          (r) =>
+            `"${r.name}","${r.role}",${r.opportunity_score},"${r.why.replace(/"/g, '""')}"`
+        )
+        .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "connectiq_export.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
