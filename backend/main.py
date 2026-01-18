@@ -54,10 +54,17 @@ def get_recommendations(req: IntentRequest):
 # ---------------- GET API (FOR FRONTEND) ----------------
 @app.get("/recommend")
 def recommend_get(intent: str):
-    profiles, source = load_profiles(intent)
-    results = recommend(intent, profiles)
+    try:
+        profiles, source = load_profiles(intent)
+        results = recommend(intent, profiles)
 
-    return {
-        "source": source,
-        "recommendations": results
-    }
+        return {
+            "source": source,
+            "recommendations": results
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e),
+            "recommendations": []
+        }
